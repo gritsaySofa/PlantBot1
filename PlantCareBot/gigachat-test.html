@@ -1,0 +1,406 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GigaChat API Тестер</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 12px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            white-space: pre-wrap;
+        }
+        .error {
+            border-left-color: #e74c3c;
+            background-color: #fdeded;
+            color: #c0392b;
+        }
+        .success {
+            border-left-color: #27ae60;
+            background-color: #edf7ed;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .loading {
+            background-color: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        .credentials-info {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        .api-key-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        .step {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌿 GigaChat API Тестер</h1>
+        
+        <div class="credentials-info">
+            <strong>ℹ️ Информация:</strong> Для GigaChat нужны Client ID и Client Secret, которые объединяются в Base64 для API ключа.
+        </div>
+
+        <div class="step">
+            <h3>🔑 Шаг 1: Введите данные авторизации</h3>
+            
+            <div class="input-group">
+                <label for="clientId">Client ID:</label>
+                <input type="text" id="clientId" placeholder="Введите Client ID...">
+            </div>
+
+            <div class="input-group">
+                <label for="clientSecret">Client Secret:</label>
+                <input type="password" id="clientSecret" placeholder="Введите Client Secret...">
+            </div>
+
+            <button onclick="generateApiKey()" id="generateBtn">Сгенерировать API Key</button>
+
+            <div id="apiKeyResult" class="api-key-display" style="display: none;">
+                <strong>Сгенерированный API Key:</strong>
+                <div id="generatedApiKey"></div>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>💬 Шаг 2: Отправьте запрос</h3>
+            
+            <div class="input-group">
+                <label for="apiKey">API Key (Base64):</label>
+                <input type="text" id="apiKey" placeholder="Или введите готовый API Key..." readonly>
+            </div>
+
+            <div class="input-group">
+                <label for="prompt">Ваш вопрос о растениях:</label>
+                <textarea id="prompt" placeholder="Например: Почему желтеют листья у фикуса?">Почему желтеют листья у фикуса?</textarea>
+            </div>
+
+            <button onclick="sendToGigaChat()" id="sendBtn">Отправить запрос к GigaChat</button>
+        </div>
+
+        <div id="status"></div>
+        <div id="result" class="result"></div>
+
+        <div class="step">
+            <h3>🔍 Шаг 3: Диагностика</h3>
+            <button onclick="testAuthenticationOnly()" id="authBtn">Только тест аутентификации</button>
+            <button onclick="clearAll()" id="clearBtn">Очистить все</button>
+        </div>
+    </div>
+
+    <script>
+        function generateApiKey() {
+            const clientId = document.getElementById('clientId').value.trim();
+            const clientSecret = document.getElementById('clientSecret').value.trim();
+
+            if (!clientId || !clientSecret) {
+                alert('❌ Введите Client ID и Client Secret');
+                return;
+            }
+
+            // Создаем API ключ в формате client_id:client_secret в Base64
+            const credentials = `${clientId}:${clientSecret}`;
+            const base64Credentials = btoa(credentials); // btoa для Base64 кодирования
+
+            document.getElementById('apiKey').value = base64Credentials;
+            document.getElementById('generatedApiKey').textContent = base64Credentials;
+            document.getElementById('apiKeyResult').style.display = 'block';
+
+            console.log('🔑 Сгенерирован API Key:', base64Credentials);
+            showResult(`✅ API Key сгенерирован!\n\nClient ID: ${clientId}\nClient Secret: ${clientSecret.substring(0, 10)}...\n\nAPI Key (Base64): ${base64Credentials}`, 'success');
+        }
+
+        async function sendToGigaChat() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const prompt = document.getElementById('prompt').value.trim();
+            const resultDiv = document.getElementById('result');
+            const statusDiv = document.getElementById('status');
+            const sendBtn = document.getElementById('sendBtn');
+
+            if (!apiKey) {
+                showResult('❌ Сначала сгенерируйте или введите API Key', 'error');
+                return;
+            }
+            if (!prompt) {
+                showResult('❌ Введите вопрос', 'error');
+                return;
+            }
+
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Отправка...';
+            statusDiv.innerHTML = '<div class="status loading">🔄 Отправка запроса к GigaChat...</div>';
+            resultDiv.innerHTML = '';
+
+            try {
+                console.log('🔄 Начинаем полный запрос к GigaChat...');
+
+                // 1. Получаем токен доступа
+                console.log('🔐 Получаем токен доступа...');
+                const token = await getAccessToken(apiKey);
+                
+                if (!token) {
+                    throw new Error('Не удалось получить токен доступа');
+                }
+
+                console.log('✅ Токен получен');
+
+                // 2. Отправляем запрос к GigaChat
+                console.log('🤖 Отправляем запрос к API...');
+                const response = await sendChatRequest(token, prompt);
+                
+                console.log('✅ Ответ получен');
+                showResult(`🤖 **Ответ GigaChat:**\n\n${response}`, 'success');
+                statusDiv.innerHTML = '<div class="status success">✅ Запрос выполнен успешно!</div>';
+
+            } catch (error) {
+                console.error('❌ Ошибка:', error);
+                showResult(`❌ Ошибка: ${error.message}`, 'error');
+                statusDiv.innerHTML = '<div class="status error">❌ Произошла ошибка</div>';
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Отправить запрос к GigaChat';
+            }
+        }
+
+        async function testAuthenticationOnly() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const authBtn = document.getElementById('authBtn');
+            const resultDiv = document.getElementById('result');
+            const statusDiv = document.getElementById('status');
+
+            if (!apiKey) {
+                showResult('❌ Введите API Key для теста аутентификации', 'error');
+                return;
+            }
+
+            authBtn.disabled = true;
+            authBtn.textContent = 'Тестируем...';
+            statusDiv.innerHTML = '<div class="status loading">🔐 Тестируем аутентификацию...</div>';
+            resultDiv.innerHTML = '';
+
+            try {
+                console.log('🔐 Тестируем только аутентификацию...');
+                const token = await getAccessToken(apiKey);
+                
+                if (token) {
+                    showResult(`✅ Аутентификация успешна!\n\nТокен получен: ${token.substring(0, 50)}...\n\nТокен действителен 30 минут.`, 'success');
+                    statusDiv.innerHTML = '<div class="status success">✅ Аутентификация успешна!</div>';
+                } else {
+                    throw new Error('Токен не получен');
+                }
+
+            } catch (error) {
+                console.error('❌ Ошибка аутентификации:', error);
+                showResult(`❌ Ошибка аутентификации: ${error.message}`, 'error');
+                statusDiv.innerHTML = '<div class="status error">❌ Ошибка аутентификации</div>';
+            } finally {
+                authBtn.disabled = false;
+                authBtn.textContent = 'Только тест аутентификации';
+            }
+        }
+
+        async function getAccessToken(apiKey) {
+            const authUrl = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
+            
+            console.log('📤 Отправка запроса токена...');
+            console.log('🔑 API Key:', apiKey.substring(0, 20) + '...');
+
+            const response = await fetch(authUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Basic ${apiKey}`,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json',
+                    'RqUID': generateUUID()
+                },
+                body: 'scope=GIGACHAT_API_PERS'
+            });
+
+            console.log('📥 Ответ аутентификации:', response.status, response.statusText);
+
+            if (!response.ok) {
+                let errorText = 'Неизвестная ошибка';
+                try {
+                    errorText = await response.text();
+                } catch (e) {
+                    errorText = response.statusText;
+                }
+                console.error('❌ Ошибка аутентификации:', errorText);
+                throw new Error(`Ошибка ${response.status}: ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log('✅ Данные токена:', data);
+            return data.access_token;
+        }
+
+        async function sendChatRequest(token, prompt) {
+            const chatUrl = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions';
+            
+            const requestBody = {
+                model: "GigaChat",
+                messages: [
+                    {
+                        role: "system",
+                        content: "Ты эксперт по уходу за растениями. Отвечай на русском языке. Будь полезным и дружелюбным. Используй эмодзи и давай практические советы."
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                temperature: 0.7,
+                max_tokens: 1000
+            };
+
+            console.log('📤 Отправка запроса чата...');
+            const response = await fetch(chatUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            console.log('📥 Ответ чата:', response.status, response.statusText);
+
+            if (!response.ok) {
+                let errorText = 'Неизвестная ошибка';
+                try {
+                    errorText = await response.text();
+                } catch (e) {
+                    errorText = response.statusText;
+                }
+                console.error('❌ Ошибка чата:', errorText);
+                throw new Error(`Ошибка API ${response.status}: ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log('✅ Данные ответа:', data);
+            
+            if (data.choices && data.choices.length > 0) {
+                return data.choices[0].message.content;
+            } else {
+                throw new Error('Неверный формат ответа от API');
+            }
+        }
+
+        function showResult(message, type = '') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = 'result';
+            if (type) {
+                resultDiv.classList.add(type);
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('clientId').value = '';
+            document.getElementById('clientSecret').value = '';
+            document.getElementById('apiKey').value = '';
+            document.getElementById('prompt').value = 'Почему желтеют листья у фикуса?';
+            document.getElementById('apiKeyResult').style.display = 'none';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('status').innerHTML = '';
+        }
+
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // Авто-тест при загрузке
+        window.addEventListener('load', function() {
+            console.log('🚀 GigaChat тестер загружен');
+            // Можно добавить тестовые данные для быстрого теста
+            // document.getElementById('clientId').value = 'test_client_id';
+            // document.getElementById('clientSecret').value = 'test_client_secret';
+        });
+    </script>
+</body>
+</html>

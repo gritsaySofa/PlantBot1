@@ -1,0 +1,6 @@
+@PlantCareBot_HostAddress = http://localhost:5130
+
+GET {{PlantCareBot_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
