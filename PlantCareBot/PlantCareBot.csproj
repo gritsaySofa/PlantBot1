@@ -15,6 +15,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     <PackageReference Include="System.Net.Http.Json" Version="9.0.10" />
     <PackageReference Include="Telegram.Bot" Version="19.0.0" />
+	<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="2.2.0" />
+	<PackageReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 	<PropertyGroup>
 		<HttpVersion>2.0</HttpVersion>
